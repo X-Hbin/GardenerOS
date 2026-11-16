@@ -4,6 +4,8 @@
 use core::arch::asm;
 use core::panic::PanicInfo;
 
+pub mod console;
+
 #[panic_handler]
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
@@ -11,7 +13,7 @@ fn panic(_info: &PanicInfo) -> ! {
 
 const SYSCALL_EXIT: usize = 93;
 
-fn syscall(id: usize, args: [usize; 3]) -> isize {
+pub(crate) fn syscall(id: usize, args: [usize; 3]) -> isize {
     let mut ret: isize;
 
     unsafe {
@@ -34,6 +36,7 @@ pub fn sys_exit(xstate: i32) -> isize {
 
 #[unsafe(no_mangle)]
 extern "C" fn _start() {
+    println!("Hello, world!");
     sys_exit(9);
 }
 
