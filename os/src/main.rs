@@ -6,7 +6,6 @@ use core::panic::PanicInfo;
 
 pub mod console;
 
-// 嵌入汇编入口代码
 global_asm!(include_str!("entry.asm"));
 
 #[panic_handler]
@@ -16,7 +15,6 @@ fn panic(_info: &PanicInfo) -> ! {
 
 const SYSCALL_EXIT: usize = 93;
 
-// 暂时保留原有系统调用封装
 pub(crate) fn syscall(id: usize, args: [usize; 3]) -> isize {
     let mut ret: isize;
 
@@ -38,10 +36,26 @@ pub fn sys_exit(xstate: i32) -> isize {
     syscall(SYSCALL_EXIT, [xstate as usize, 0, 0])
 }
 
-// Rust 内核入口
-#[unsafe(no_mangle)]
-pub fn rust_main() -> ! {
-    loop {}
+fn clear_bss() {
+    unsafe extern "C" {
+        fn sbss();
+        fn ebss();
+    }
+
+    let sbss_addr = sbss as *const () as usize;
+    let ebss_addr = ebss as *const () as usize;
+
+    for addr in sbss_addr..ebss_addr {
+        unsafe {
+            (addr as *mut u8).write_volatile(0);
+        }
+    }
 }
 
 
+#[unsafe(no_mangle)]
+pub fn rust_main() -> ! {
+    clear_bss();
+
+    loop {}
+}
